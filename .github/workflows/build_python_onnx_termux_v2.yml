@@ -1,0 +1,35 @@
+name: Build ONNX for Termux v2
+
+on:
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: 'Target architecture'
+        required: true
+        default: 'aarch64'
+        type: choice
+        options:
+          - aarch64
+          - arm
+          - x86_64
+          - i686
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: termux/package-builder:latest   # 关键：用官方容器
+
+    env:
+      TERMUX_ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
+
+    steps:
+      - name: Build onnx
+        run: |
+          build-package.sh onnx
+          build-package.sh python-onnx
+
+      - name: Upload DEB files
+        uses: actions/upload-artifact@v4
+        with:
+          name: onnx-debs-${{ env.TERMUX_ARCH }}
+          path: /home/builder/packages/debs/${{ env.TERMUX_ARCH }}/*onnx*.deb
